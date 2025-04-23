@@ -609,16 +609,16 @@ def addCardToDeck(name=None, suit=None, modifier=None):
 def printCard(card):
     global cardStyle
     rank = card[0]
-    modifier = card[3] if card[3] else ""
+    modifier = card[3] if card[3] is not None else ""
     
     if cardStyle == 2:
         suit = suitMap[card[1]]
-        return rank + suit + modifier
+        return f"{rank}{suit}{modifier}"
     elif cardStyle == 1:
         suit = card[1]
-        return rank + suit + modifier
+        return f"{rank}{suit}{modifier}"
     else:
-        return f"{rank} {card[1]}{modifier}"  # default fallback
+        return f"{rank}{card[1]}{modifier}"  # default fallback
 
 def checkHand(chips, mult, selectedHand):
     selectedHand = sorted(selectedHand, key=lambda card: ranks.index(card[0]))
@@ -861,7 +861,7 @@ def printShop():
             shopCards.append(modified_card)  # Append the modified card to the shop
         else:
             card = r.choice(cards)  # Select a random card
-            card.append(r.randint(1, 20), -1)
+            card.append(r.randint(1, 20))  # Add a random price to the card
             shopCards.append(card)
 
     for i in range(amountOfJokers):
