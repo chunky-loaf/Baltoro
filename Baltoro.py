@@ -613,12 +613,12 @@ def printCard(card):
     
     if cardStyle == 2:
         suit = suitMap[card[1]]
-        return f"{rank}{suit}{modifier}"
+        return f"{rank}{suit}{str(modifier)}"
     elif cardStyle == 1:
         suit = card[1]
-        return f"{rank}{suit}{modifier}"
+        return f"{rank}{suit}{str(modifier)}"
     else:
-        return f"{rank}{card[1]}{modifier}"  # default fallback
+        return f"{rank}{card[1]}{str(modifier)}"  # default fallback
 
 def checkHand(chips, mult, selectedHand):
     selectedHand = sorted(selectedHand, key=lambda card: ranks.index(card[0]))
@@ -846,29 +846,33 @@ def play():
         choice = input().lower()
 
 def printShop():
-    global cards, money, jokers, vouchers
+    global cards, money, jokers, vouchers, testRun
     jokerCards = []
     shopCards = []
     amountOfCards = r.randint(1, 4)
     amountOfJokers = r.randint(1, 3)
 
     for i in range(amountOfCards):
-        modifierChance = r.randint(1, 5)
+        price = r.randint(1, 10)
+
+        if testRun:
+            modifierChance = 1
+        else:
+            modifierChance = r.randint(1, 5)
+            
         if modifierChance == 1:
             card = r.choice(cards)  # Select a random card
             modifier = r.choice(list(modifiers.keys()))  # Select a random modifier
-            modified_card = [card[0], card[1], card[2], modifier]  # Add the modifier to the card
-            shopCards.append(modified_card)  # Append the modified card to the shop
+            shopCards.append([card[0], card[1], card[2], modifier, price])
         else:
             card = r.choice(cards)  # Select a random card
-            card.append(r.randint(1, 20))  # Add a random price to the card
-            shopCards.append(card)
+            shopCards.append([card[0], card[1], card[2], None, price])  # Create a new card object with the price
 
     for i in range(amountOfJokers):
         joker = r.choice(list(jokers))
         jokerCards.append(joker)  # Append the joker to the shop
 
-    while True: 
+    while True:
         text_scroll(f"""\n
 ୧‿̩͙ ˖︵ ꕀ⠀SHOP ꕀ ︵˖ ‿̩͙୨
 
@@ -878,10 +882,9 @@ def printShop():
 {'\n'.join(f"{i + 1}) {printCard(card)}: {card[-1]}$" for i, card in enumerate(shopCards))}
 
 - Jokers:
-{'\n'.join(f"{i + 1 + amountOfCards}) {joker[0]}: {joker[1]}$ - {joker[2]}" for i, joker in enumerate(jokerCards))}
+{'\n'.join(f"{i + 1 + len(shopCards)}) {joker[0]}: {joker[1]}$ - {joker[2]}" for i, joker in enumerate(jokerCards))}
 
-"leave" to exit the shop
-    """)
+"leave" to exit the shop\n""")
         choice = input("Select a card to buy: ")
 
         if choice == "leave":
@@ -890,19 +893,21 @@ def printShop():
             time.sleep(0.5)
             clear()
             break
+        
+        choice = int(choice)
 
-        elif choice.isdigit() and 1 <= choice <= amountOfCards:
-            if money >= cardPrice:
+        if 1 <= choice <= len(shopCards):
+            if money >= shopCards[int(choice)-1][-1]:
                 clear()
-                text_scroll(f"You bought {shopCards[choice-1]} for {cardPrice}$")
+                text_scroll(f"You bought {printCard(shopCards[int(choice)-1])} for {shopCards[int(choice) - 1][-1]}$")
                 time.sleep(0.5)
                 clear()
-                money -= cardPrice
-                shopCards[choice - 1].remove(shopCards[choice - 1][-1])
-                cards.append(shopCards[choice - 1])
-                shopCards.pop(choice - 1)
+                money -= shopCards[int(choice) - 1][-1]
+                shopCards[int(choice) - 1].remove(shopCards[int(choice) - 1][-1])
+                cards.append(shopCards[int(choice) - 1])
+                shopCards.pop(int(choice) - 1)
                 continue
-            elif money < cardPrice:
+            elif money < shopCards[int(choice) - 1][-1]:
                 clear()
                 text_scroll("Not enough money!")
                 time.sleep(2)
@@ -910,37 +915,30 @@ def printShop():
                 continue
             else:
                 clear()
-                text_scroll("Invalid selection!")
+                text_scroll("buy card failed!")
                 time.sleep(2)
                 clear()
                 continue
-        elif choice.isdigit() and len(shopCards) + 1 < int(choice) <= len(shopCards) + amountOfJokers:
-            choice = int(choice)
-            cardPrice = r.randint(1, 20)
-            if money >= shopCards[choice-1][1]:
+        elif len(shopCards) < choice <= len(shopCards) + len(jokerCards):
+            jokerIndex = choice - len(shopCards) - 1
+            if money >= jokerCards[jokerIndex][1]:
                 clear()
-                text_scroll(f"You bought {shopCards[choice-1]} for {shopCards[choice-1][1]}$")
+                text_scroll(f"You bought {jokerCards[jokerIndex][0]} for {jokerCards[jokerIndex][1]}$")
                 time.sleep(0.5)
                 clear()
-                money -= cardPrice
-                jokerDeck.append(shopCards[choice - 1])
-                shopCards.pop(choice - 1)
-                continue
-            elif money < cardPrice:
-                clear()
-                text_scroll("Not enough money!")
-                time.sleep(2)
-                clear()
+                money -= jokerCards[jokerIndex][1]
+                jokerDeck.append(jokerCards[jokerIndex])
+                jokerCards.pop(jokerIndex)
                 continue
             else:
                 clear()
-                text_scroll("Invalid selection!")
+                text_scroll("Not enough money!")
                 time.sleep(2)
                 clear()
                 continue
         else:
             clear()
-            text_scroll("Invalid selection!")
+            text_scroll("select card to buy failed!")
             time.sleep(2)
             clear()
             continue
@@ -955,7 +953,7 @@ def printBoard(hand, chips, mult, hands, discards, roundScore, cards, money, ant
 [Ante: {ante}]
 
 - Jokers:
-{None}
+{'\n'.join(f"{i + 1}) {joker[0]} - {joker[2]}" for i, joker in enumerate(hand))}
 
 - Hand:
 {'\n'.join(f"{i + 1}) {printCard(card)}" for i, card in enumerate(hand))}
