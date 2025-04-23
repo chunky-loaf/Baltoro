@@ -7,7 +7,7 @@ import pprint
 import os
 
 # VARIABLES:
-testRun = True # True / False
+testRun = False # True / False
 doLoadingScreen = True # True / False
 ante = 0
 money = 0
@@ -84,33 +84,31 @@ def nameMap(ante):
     else:
         return blindNames[0]
     
-jokers = {
-    ("Joker", 2, "+4 Multi"),
-    ("Greedy Joker", 5, "Played cards with ♦ Diamond suit give +3 Mult when scored"),
-    ("Lusty Joker", 5, "Played cards with ♥ Heart suit give +3 Mult when scored"),
-    ("Wrathful Joker", 5, "Played cards with ♠ Spade suit give +3 Mult when scored"),
-    ("Gluttonous Joker", 5, "Played cards with ♣ Club suit give +3 Mult when scored"),
-    ("Jolly Joker", 3, "+8 Mult if played hand contains a Pair"),
-    ("Zany Joker", 4, "+12 Mult if played hand contains a Three of a Kind"),
-    ("Mad Joker", 4, "+10 Mult if played hand contains a Two Pair"),
-    ("Crazy Joker", 4, "+12 Mult if played hand contains a Straight"),
-    ("Droll Joker", 4, "+10 Mult if played hand contains a Flush"),
-    ("Sly Joker", 3, "+50 Chips if played hand contains a Pair"),
-    ("Wily Joker", 4, "+100 Chips if played hand contains a Three of a Kind"),
-    ("Clever Joker", 4, "+80 Chips if played hand contains a Two Pair"),
-    ("Devious Joker", 4, "+80 Chips if played hand contains a Flush"),
-    ("Half Joker", 5, "+20 Mult if played hand contains 3 or fewer cards"),
-    ("Joker Stencil", 8, "x1 Mult for each empty Joker slot"),
-    ("Banner", 5, "+30 Chips for each remaining discard"),
-    ("Mystic Summit", 5, "+15 Mult when 0 discards remaining"),
-    ("Misprint", 4, "+0-23 Mult"),
-    ("Fibonacci", 8, "Each played Ace, 2, 3, 5, or 8 gives +8 Mult when scored"),
-    ("Scary Face", 4, "Played face cards give +30 Chips when scored"),
-    ("Abstract Joker", 4, "+3 Mult for each Joker card"),
-    ("Delayed Gratification", 4, "Earn $2 per discard if no discards are used by end of the round"),
-    ("Even Steven", 4, "Played cards with even rank give +4 Mult when scored"), 
-    ("Odd Todd", 4, "Played cards with odd rank give +31 Chips when scored")
-}
+jokers = [
+    ["Joker", 2, "+4 Multi"],
+    ["Greedy Joker", 5, "Played cards with ♦ Diamond suit give +3 Mult when scored"],
+    ["Lusty Joker", 5, "Played cards with ♥ Heart suit give +3 Mult when scored"],
+    ["Wrathful Joker", 5, "Played cards with ♠ Spade suit give +3 Mult when scored"],
+    ["Gluttonous Joker", 5, "Played cards with ♣ Club suit give +3 Mult when scored"],
+    ["Jolly Joker", 3, "+8 Mult if played hand contains a Pair"],
+    ["Zany Joker", 4, "+12 Mult if played hand contains a Three of a Kind"],
+    ["Mad Joker", 4, "+10 Mult if played hand contains a Two Pair"],
+    ["Crazy Joker", 4, "+12 Mult if played hand contains a Straight"],
+    ["Droll Joker", 4, "+10 Mult if played hand contains a Flush"],
+    ["Sly Joker", 3, "+50 Chips if played hand contains a Pair"],
+    ["Wily Joker", 4, "+100 Chips if played hand contains a Three of a Kind"],
+    ["Clever Joker", 4, "+80 Chips if played hand contains a Two Pair"],
+    ["Devious Joker", 4, "+80 Chips if played hand contains a Flush"],
+    ["Half Joker", 5, "+20 Mult if played hand contains 3 or fewer cards"],
+    ["Banner", 5, "+30 Chips for each remaining discard"],
+    ["Mystic Summit", 5, "+15 Mult when 0 discards remaining"],
+    ["Misprint", 4, "+0-23 Mult"],
+    ["Fibonacci", 8, "Each played Ace, 2, 3, 5, or 8 gives +8 Mult when scored"],
+    ["Scary Face", 4, "Played face cards give +30 Chips when scored"],
+    ["Abstract Joker", 4, "+3 Mult for each Joker card"],
+    ["Even Steven", 4, "Played cards with even rank give +4 Mult when scored"],
+    ["Odd Todd", 4, "Played cards with odd rank give +31 Chips when scored"]
+]
 
 jokerDeck = []
 
@@ -713,7 +711,86 @@ def checkHand(chips, mult, selectedHand):
 
     return chips, mult
 
-        
+def checkJokers(chips, mult, selectedHand):
+    global jokerDeck, jokers
+    if len(jokerDeck) == 0:
+        return chips, mult
+
+    global discards
+    rank_counts = Counter(card[0] for card in selectedHand)  # Calculate rank counts
+
+    if jokers[0] in selectedHand:
+        mult += 4
+    if jokers[1] in selectedHand:
+        for card in selectedHand:
+            if card[1] == "D":  # Check if the suit is Diamonds
+                mult += 3
+    if jokers[2] in selectedHand:
+        for card in selectedHand:
+            if card[1] == "H":
+                mult += 3
+    if jokers[3] in selectedHand:
+        for card in selectedHand:
+            if card[1] == "S":
+                mult += 3
+    if jokers[4] in selectedHand:
+        for card in selectedHand:
+            if card[1] == "C":
+                mult += 3
+    if jokers[5] in selectedHand:
+        if any(count == 2 for count in rank_counts.values()):
+            mult += 8
+    if jokers[6] in selectedHand:
+        if any(count == 3 for count in rank_counts.values()):
+            mult += 12
+    if jokers[7] in selectedHand:
+        if any(count == 2 for count in rank_counts.values()) and list(rank_counts.values()).count(2) == 2:
+            mult += 12
+    if jokers[8] in selectedHand:
+        if any(count >= 5 for count in Counter(card[1] for card in selectedHand).values()):
+            chips += 10
+    if jokers[9] in selectedHand:
+        if any(count == 2 for count in rank_counts.values()):
+            chips += 50
+    if jokers[10] in selectedHand:
+        any(count == 3 for count in rank_counts.values())
+        chips += 100
+    if jokers[11] in selectedHand:
+        if list(rank_counts.values()).count(2) == 2:
+            chips += 80
+    if jokers[12] in selectedHand:
+        if any(count >= 5 for count in Counter(card[1] for card in selectedHand).values()):
+            chips += 80
+    if jokers[13] in selectedHand:
+        if len(selectedHand) <= 3:
+            mult += 20
+    if jokers[14] in selectedHand:
+        if discards[1] != 0:
+            chips += 30 * discards[1]
+    if jokers[15] in selectedHand:
+        if discards[1] == 0:
+            mult += 15
+    if jokers[16] in selectedHand:
+        mult += r.randint(0, 23)
+    if jokers[17] in selectedHand:
+        for card in selectedHand:
+            if card[0] in ["A", "2", "3", "5", "8"]:
+                mult += 8
+    if jokers[18] in selectedHand:
+        for card in selectedHand:
+            if card[0] in ["J", "Q", "K"]:
+                chips += 30
+    if jokers[19] in selectedHand:
+        mult += 3 * len(jokerDeck)
+    if jokers[20] in selectedHand:
+        for card in selectedHand:
+            if card[2] in [2, 4, 6, 8, 10]:
+                mult += 4
+    if jokers[21] in selectedHand:
+        for card in selectedHand:
+            if card[2] in [3, 5, 7, 9, 11]:
+                chips += 31
+    return chips, mult
 #addCardToDeck(
 #    input("name (2-9/J-A): ").upper(),
 #    input("suit (S/H/D/C): ").upper(),
@@ -721,7 +798,7 @@ def checkHand(chips, mult, selectedHand):
 #)
 
 def play():
-    global chips, mult, hands, discards, roundScore, money, ante, handSize, cards, tutorial, goalScore
+    global chips, mult, hands, discards, roundScore, money, ante, handSize, cards, tutorial, goalScore, testRun
     if tutorial:
         clear()
         text_scroll(tutorialText)
@@ -733,7 +810,10 @@ def play():
     else:
         money = 1000
     cards = templateCards
-    goalScore = 300
+    if testRun:
+        goalScore = 1 
+    else:
+        goalScore = 300
     ante = 0
 
     while True: # Main Game Loop
@@ -745,7 +825,7 @@ def play():
         mult = 0
         hand = []
 
-        while not testRun: # Ante loop (skips whne testing)
+        while True: # Ante loop 
             clear()
 
             while len(hand) < handSize: # Fill hand with cards
@@ -810,6 +890,7 @@ def play():
                 mult = 0
 
                 chips, mult = checkHand(chips, mult, selectedHand) # Convert the selected cards to chips and multipliers
+                chips, mult = checkJokers(chips, mult, selectedHand) # Check for jokers in the selected cards
                 hands[1] -= 1
                 roundScore += chips * mult # Add the chips and multipliers to the round score
 
@@ -835,15 +916,13 @@ def play():
                     text_scroll("No discards left!")
                     continue
 
-                else: # Ff discards remain
+                else: # If discards remain
                     for card in selectedHand: # Remove the selected cards from the hand and add it back to the deck
                         hand.remove(card)
                         cards.append(card)
                     discards[1] -= 1
-
         clear()
-        text_scroll(printShop())
-        choice = input().lower()
+        printShop()
 
 def printShop():
     global cards, money, jokers, vouchers, testRun
@@ -892,7 +971,7 @@ def printShop():
             text_scroll("Leaving the shop...")
             time.sleep(0.5)
             clear()
-            break
+            return
         
         choice = int(choice)
 
@@ -907,15 +986,9 @@ def printShop():
                 cards.append(shopCards[int(choice) - 1])
                 shopCards.pop(int(choice) - 1)
                 continue
-            elif money < shopCards[int(choice) - 1][-1]:
-                clear()
-                text_scroll("Not enough money!")
-                time.sleep(2)
-                clear()
-                continue
             else:
                 clear()
-                text_scroll("buy card failed!")
+                text_scroll("Not enough money!")
                 time.sleep(2)
                 clear()
                 continue
@@ -938,7 +1011,7 @@ def printShop():
                 continue
         else:
             clear()
-            text_scroll("select card to buy failed!")
+            text_scroll("Invalid Card or Empty Shop!")
             time.sleep(2)
             clear()
             continue
@@ -953,7 +1026,7 @@ def printBoard(hand, chips, mult, hands, discards, roundScore, cards, money, ant
 [Ante: {ante}]
 
 - Jokers:
-{'\n'.join(f"{i + 1}) {joker[0]} - {joker[2]}" for i, joker in enumerate(hand))}
+{'\n'.join(f"{i + 1}) {joker[0]} - {joker[2]}" for i, joker in enumerate(jokerDeck))}
 
 - Hand:
 {'\n'.join(f"{i + 1}) {printCard(card)}" for i, card in enumerate(hand))}
